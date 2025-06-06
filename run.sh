@@ -1,2 +1,10 @@
-python G11HW3.py 8886 500000 5 1000 10
-python DistinctItemsExample.py 8886 500000
+#                port T      D W   K
+python G11HW3.py 8886 100000 9 100  10
+python G11HW3.py 8886 100000 9 100  20
+python G11HW3.py 8886 100000 9 100  50
+python G11HW3.py 8886 100000 9 100 100
+
+python G11HW3.py 8886 100000 9   5  10
+python G11HW3.py 8886 100000 9  10  10
+python G11HW3.py 8886 100000 9  20  10
+python G11HW3.py 8886 100000 9  50  10
