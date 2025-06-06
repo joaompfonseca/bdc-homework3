@@ -66,23 +66,42 @@ class CountSketch:
 
 
 def process_batch(time, batch):
+    global streamLength, histogram, true_counts, cms, cs
     batch_size = batch.count()
+    #true_counts = defaultdict(int) 
     # If we already have enough points (> THRESHOLD), skip this batch.
     if streamLength[0]>=THRESHOLD:
         return
     streamLength[0] += batch_size
     # Extract the distinct items from the batch
-    batch_items = batch.map(lambda s: (int(s), 1)).reduceByKey(lambda i1, i2: 1).collectAsMap()
+    #batch_items = batch.map(lambda s: (int(s), 1)).reduceByKey(lambda i1, i2: 1).collectAsMap()
 
-    for item in batch_items:
-        true_counts[item] += 1
-        cms.add(item)
-        cs.add(item)
-    streamLength[0] += len(batch_items)
-           
+    # Update the streaming state
+    # for key in batch_items:
+    #     if key not in histogram:
+    #         histogram[key] = 1
+
+    #     true_counts[key] += 1
+    #     cms.add(key)
+    #     cs.add(key)
+
+    
+    batch_items = batch.map(lambda s: (int(s), 1)).reduceByKey(lambda x, y: x + y).collectAsMap()
+
+    for key, count in batch_items.items():
+        if key not in histogram:
+            histogram[key] = 1
+
+        true_counts[key] += count
+        for _ in range(count):
+            cms.add(key)
+            cs.add(key)
+
+
     # If we wanted, here we could run some additional code on the global histogram
     # if batch_size > 0:
     #     print("Batch size at time [{0}] is: {1}".format(time, batch_size))
+
 
     if streamLength[0] >= THRESHOLD:
         stopping_condition.set()
@@ -103,6 +122,7 @@ if __name__ == '__main__':
 
     stopping_condition = threading.Event()
     streamLength = [0]
+    histogram = dict()
     true_counts = defaultdict(int)
     cms = CountMinSketch(D, W)
     cs = CountSketch(D, W)
@@ -143,6 +163,6 @@ if __name__ == '__main__':
     print(f'Avg Relative Error for Top-K Heavy Hitters with CS = {sum(cs_errors)/len(cs_errors)}')
 
     if K <= 10:
-        print('Top-K Heavy Hitters')
+        print('Top-K Heavy Hitters:')
         for item in heavy_hitters:
             print(f'Item {item} True Frequency = {true_counts[item]} Estimated Frequency with CM = {cms.estimate(item)}')

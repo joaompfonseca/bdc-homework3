@@ -1,17 +1,17 @@
 Port = 8886 T = 200000 D = 7 W = 100 K = 10
-Number of processed items = 266892
-Number of distinct items  = 44605
+Number of processed items = 350484
+Number of distinct items  = 70153
 Number of Top-K Heavy Hitters = 10
-Avg Relative Error for Top-K Heavy Hitters with CM = 42.13000000000001
-Avg Relative Error for Top-K Heavy Hitters with CS = 1.3599999999999999
-Top-K Heavy Hitters
-Item 1590293530 True Frequency = 10 Estimated Frequency with CM = 429
-Item 1472610405 True Frequency = 10 Estimated Frequency with CM = 435
-Item 641486445 True Frequency = 10 Estimated Frequency with CM = 430
-Item 434415286 True Frequency = 10 Estimated Frequency with CM = 424
-Item 1690049656 True Frequency = 10 Estimated Frequency with CM = 427
-Item 195773912 True Frequency = 10 Estimated Frequency with CM = 440
-Item 339323283 True Frequency = 10 Estimated Frequency with CM = 413
-Item 870070186 True Frequency = 10 Estimated Frequency with CM = 436
-Item 819911327 True Frequency = 10 Estimated Frequency with CM = 428
-Item 1936875793 True Frequency = 10 Estimated Frequency with CM = 451
+Avg Relative Error for Top-K Heavy Hitters with CM = 0.023996937425400426
+Avg Relative Error for Top-K Heavy Hitters with CS = 0.0005427230986670008
+Top-K Heavy Hitters:
+Item 195773912 True Frequency = 28222 Estimated Frequency with CM = 28897
+Item 819911327 True Frequency = 28130 Estimated Frequency with CM = 28810
+Item 1936875793 True Frequency = 28129 Estimated Frequency with CM = 28828
+Item 1472610405 True Frequency = 28107 Estimated Frequency with CM = 28788
+Item 1690049656 True Frequency = 28097 Estimated Frequency with CM = 28775
+Item 870070186 True Frequency = 28052 Estimated Frequency with CM = 28677
+Item 339323283 True Frequency = 28050 Estimated Frequency with CM = 28707
+Item 434415286 True Frequency = 27965 Estimated Frequency with CM = 28642
+Item 641486445 True Frequency = 27862 Estimated Frequency with CM = 28541
+Item 1590293530 True Frequency = 27678 Estimated Frequency with CM = 28353

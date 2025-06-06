@@ -1,6 +1,6 @@
 Port = 8886 T = 200000 D = 7 W = 100 K = 20
-Number of processed items = 203865
-Number of distinct items  = 34136
-Number of Top-K Heavy Hitters = 34136
-Avg Relative Error for Top-K Heavy Hitters with CM = 316.80106046402625
-Avg Relative Error for Top-K Heavy Hitters with CS = 8.435244316850246
+Number of processed items = 327624
+Number of distinct items  = 65630
+Number of Top-K Heavy Hitters = 57
+Avg Relative Error for Top-K Heavy Hitters with CM = 258.15336435515434
+Avg Relative Error for Top-K Heavy Hitters with CS = 232.9737972028109
