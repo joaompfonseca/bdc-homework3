@@ -81,8 +81,8 @@ def process_batch(time, batch):
     streamLength[0] += len(batch_items)
            
     # If we wanted, here we could run some additional code on the global histogram
-    if batch_size > 0:
-        print("Batch size at time [{0}] is: {1}".format(time, batch_size))
+    # if batch_size > 0:
+    #     print("Batch size at time [{0}] is: {1}".format(time, batch_size))
 
     if streamLength[0] >= THRESHOLD:
         stopping_condition.set()
@@ -107,8 +107,7 @@ if __name__ == '__main__':
     cms = CountMinSketch(D, W)
     cs = CountSketch(D, W)
 
-    print(f"Receiving data from port = {portExp}")
-    print(f"Threshold = {THRESHOLD}, D = {D}, W = {W}, K = {K}")
+    print(f'Port = {portExp} T = {THRESHOLD} D = {D} W = {W} K = {K}')
 
     stream = ssc.socketTextStream("algo.dei.unipd.it", portExp, StorageLevel.MEMORY_AND_DISK)
     stream.foreachRDD(lambda time, rdd: process_batch(time, rdd))
@@ -117,21 +116,18 @@ if __name__ == '__main__':
     stopping_condition.wait()
     ssc.stop(False, False)
 
-    print(f"Number of items processed = {streamLength[0]}")
-    print(f"Number of distinct items = {len(true_counts)}")
+    print(f"Number of processed items = {streamLength[0]}")
+    print(f"Number of distinct items  = {len(true_counts)}")
 
     # Identify top-K heavy hitters
     sorted_items = sorted(true_counts.items(), key=lambda x: -x[1])
     if len(sorted_items) == 0:
         sys.exit(0)
-    
-    largest_item, largest_freq = sorted_items[0]
-    print(f"Largest item ID = {max(true_counts.keys())}")
-    print(f"Most frequent item = {sorted_items[0][0]} with frequency = {sorted_items[0][1]}")
-
 
     phiK = sorted_items[K - 1][1] if len(sorted_items) >= K else sorted_items[-1][1]
     heavy_hitters = [item for item, count in sorted_items if count >= phiK]
+
+    print(f'Number of Top-K Heavy Hitters = {len(heavy_hitters)}')
 
     cm_errors = []
     cs_errors = []
@@ -143,11 +139,10 @@ if __name__ == '__main__':
         cm_errors.append(abs(cm_est - true_freq) / true_freq)
         cs_errors.append(abs(cs_est - true_freq) / true_freq)
 
-    print(f"Average relative error (CM) = {sum(cm_errors)/len(cm_errors)}")
-    print(f"Average relative error (CS) = {sum(cs_errors)/len(cs_errors)}")
+    print(f'Avg Relative Error for Top-K Heavy Hitters with CM = {sum(cm_errors)/len(cm_errors)}')
+    print(f'Avg Relative Error for Top-K Heavy Hitters with CS = {sum(cs_errors)/len(cs_errors)}')
 
     if K <= 10:
-        print("\nTop-K Heavy Hitters (CM estimates):")
-        print("Item\tTrueFreq\tCM_Est")
+        print('Top-K Heavy Hitters')
         for item in heavy_hitters:
-            print(f"{item}\t{true_counts[item]}\t{cms.estimate(item)}")
+            print(f'Item {item} True Frequency = {true_counts[item]} Estimated Frequency with CM = {cms.estimate(item)}')
