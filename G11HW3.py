@@ -143,8 +143,8 @@ if __name__ == '__main__':
         cm_errors.append(abs(cm_est - true_freq) / true_freq)
         cs_errors.append(abs(cs_est - true_freq) / true_freq)
 
-    print(f"Average relative error (CM) = {sum(cm_errors)/len(cm_errors):.4f}")
-    print(f"Average relative error (CS) = {sum(cs_errors)/len(cs_errors):.4f}")
+    print(f"Average relative error (CM) = {sum(cm_errors)/len(cm_errors)}")
+    print(f"Average relative error (CS) = {sum(cs_errors)/len(cs_errors)}")
 
     if K <= 10:
         print("\nTop-K Heavy Hitters (CM estimates):")
