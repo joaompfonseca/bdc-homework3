@@ -22,40 +22,47 @@ def generate_sign_function(p: int = 8191):
 
 
 class CountMinSketch:
-    def __init__(self, D, W):
+    def __init__(self, D: int, W: int):
         self.D = D
         self.W = W
-        self.table = [[0] * W for _ in range(D)]
-        self.hashes = [generate_hash_function(W) for _ in range(D)]
+        self.C = [[0] * W for _ in range(D)]
+        self.h = [generate_hash_function(W) for _ in range(D)]
 
-    def add(self, x):
-        for i in range(self.D):
-            idx = self.hashes[i](x)
-            self.table[i][idx] += 1
+    def add(self, x: int):
+        for j in range(self.D):
+            hj_x = self.h[j](x)  # hash
+            self.C[j][hj_x] += 1
 
-    def estimate(self, x):
-        return min(self.table[i][self.hashes[i](x)] for i in range(self.D))
+    def estimate(self, u: int):
+        est = 0
+        C_u = [self.C[j][self.h[j](u)] for j in range(self.D)]
+        return min(C_u, est)
 
 
 class CountSketch:
-    def __init__(self, D, W):
+    def __init__(self, D: int, W: int):
         self.D = D
         self.W = W
-        self.table = [[0] * W for _ in range(D)]
-        self.hashes = [generate_hash_function(W) for _ in range(D)]
-        self.signs = [generate_sign_function() for _ in range(D)]
+        self.C = [[0] * W for _ in range(D)]
+        self.h = [generate_hash_function(W) for _ in range(D)]
+        self.g = [generate_sign_function() for _ in range(D)]
 
-    def add(self, x):
-        for i in range(self.D):
-            idx = self.hashes[i](x)
-            sign = self.signs[i](x)
-            self.table[i][idx] += sign
+    def add(self, x: int):
+        for j in range(self.D):
+            hj_x = self.h[j](x)  # hash
+            gj_x = self.g[j](x)  # sign
+            self.C[j][hj_x] += gj_x
 
-    def estimate(self, x):
-        estimates = [self.table[i][self.hashes[i](x)] * self.signs[i](x) for i in range(self.D)]
-        estimates.sort()
-        mid = len(estimates) // 2
-        return estimates[mid] if len(estimates) % 2 == 1 else (estimates[mid - 1] + estimates[mid]) / 2
+    def estimate(self, u: int):
+        est = 0
+        C_u = [self.g[j](u) * self.C[j][self.h[j](u)] for j in range(self.D)]
+        C_u = sorted(C_u)
+        mid = len(C_u) // 2
+        if len(C_u) % 2 == 1:
+            est = C_u[mid]
+        else:
+            est = (C_u[mid - 1] + C_u[mid]) / 2  # average of two middle elements
+        return est
 
 
 def process_batch(time, batch, T, streamLength, histogram, tc, cm, cs, stopping_condition):
