@@ -1,19 +1,25 @@
+import argparse
+import random as r
 import sys
-import random
 import threading
 import time
-from collections import defaultdict, Counter
+from collections import Counter, defaultdict
+
 from pyspark import SparkConf, SparkContext, StorageLevel
 from pyspark.streaming import StreamingContext
 
+HOSTNAME = 'algo.dei.unipd.it'
 
-# Hash function factory for Count-Min and Count Sketches
-def generate_hash_function(a, b, p, C):
+
+def generate_hash_function(C: int, p: int = 8191):
+    a = r.randint(1, p - 1)
+    b = r.randint(0, p - 1)
     return lambda x: ((a * x + b) % p) % C
 
 
-# Sign hash for Count Sketch
-def generate_sign_function(a, b, p):
+def generate_sign_function(p: int = 8191):
+    a = r.randint(1, p - 1)
+    b = r.randint(0, p - 1)
     return lambda x: 1 if ((a * x + b) % p) % 2 == 0 else -1
 
 
@@ -23,10 +29,7 @@ class CountMinSketch:
         self.W = W
         self.p = 8191
         self.table = [[0] * W for _ in range(D)]
-        self.hashes = [
-            generate_hash_function(random.randint(1, self.p - 1), random.randint(0, self.p - 1), self.p, W)
-            for _ in range(D)
-        ]
+        self.hashes = [generate_hash_function(W) for _ in range(D)]
 
     def add(self, x):
         for i in range(self.D):
@@ -43,14 +46,8 @@ class CountSketch:
         self.W = W
         self.p = 8191
         self.table = [[0] * W for _ in range(D)]
-        self.hashes = [
-            generate_hash_function(random.randint(1, self.p - 1), random.randint(0, self.p - 1), self.p, W)
-            for _ in range(D)
-        ]
-        self.signs = [
-            generate_sign_function(random.randint(1, self.p - 1), random.randint(0, self.p - 1), self.p)
-            for _ in range(D)
-        ]
+        self.hashes = [generate_hash_function(W) for _ in range(D)]
+        self.signs = [generate_sign_function() for _ in range(D)]
 
     def add(self, x):
         for i in range(self.D):
@@ -65,104 +62,94 @@ class CountSketch:
         return estimates[mid] if len(estimates) % 2 == 1 else (estimates[mid - 1] + estimates[mid]) / 2
 
 
-def process_batch(time, batch):
-    global streamLength, histogram, true_counts, cms, cs
-    batch_size = batch.count()
-    #true_counts = defaultdict(int) 
-    # If we already have enough points (> THRESHOLD), skip this batch.
-    if streamLength[0]>=THRESHOLD:
+def process_batch(time, batch, T, streamLength, histogram, tc, cm, cs, stopping_condition):
+  
+    # Skip if we processed enough items from stream
+    if streamLength[0] >= T:
         return
-    streamLength[0] += batch_size
-    # Extract the distinct items from the batch
-    #batch_items = batch.map(lambda s: (int(s), 1)).reduceByKey(lambda i1, i2: 1).collectAsMap()
+    streamLength[0] += batch.count()
 
-    # Update the streaming state
-    # for key in batch_items:
-    #     if key not in histogram:
-    #         histogram[key] = 1
-
-    #     true_counts[key] += 1
-    #     cms.add(key)
-    #     cs.add(key)
-
-    
+    # Extract item counts from the batch
     batch_items = batch.map(lambda s: (int(s), 1)).reduceByKey(lambda x, y: x + y).collectAsMap()
 
+    # Update the histogram, true counts, and sketches
     for key, count in batch_items.items():
         if key not in histogram:
-            histogram[key] = 1
-
-        true_counts[key] += count
+            histogram.add(key)
+        tc[key] += count
         for _ in range(count):
-            cms.add(key)
+            cm.add(key)
             cs.add(key)
 
-
-    # If we wanted, here we could run some additional code on the global histogram
-    # if batch_size > 0:
-    #     print("Batch size at time [{0}] is: {1}".format(time, batch_size))
-
-
-    if streamLength[0] >= THRESHOLD:
+    # Set the stopping condition if we reached the target number of items
+    if streamLength[0] >= T:
         stopping_condition.set()
 
 
-if __name__ == '__main__':
-    assert len(sys.argv) == 6, "USAGE: port, threshold, D, W, K"
-    portExp = int(sys.argv[1])
-    THRESHOLD = int(sys.argv[2])
-    D = int(sys.argv[3])
-    W = int(sys.argv[4])
-    K = int(sys.argv[5])
+def main(portExp: int, T: int, D: int, W: int, K: int):
 
-    conf = SparkConf().setMaster("local[*]").setAppName("G11HW3")
+    # Print command-line arguments
+    print(f'Port = {portExp} T = {T} D = {D} W = {W} K = {K}')
+
+    # Setup Spark
+    conf = SparkConf().setMaster('local[*]').setAppName('G11HW3')
     sc = SparkContext(conf=conf)
     ssc = StreamingContext(sc, 0.01)
-    ssc.sparkContext.setLogLevel("ERROR")
+    ssc.sparkContext.setLogLevel('ERROR')
 
+    # Setup semaphore for clean shutdown
     stopping_condition = threading.Event()
+
+    # Setup data structures
     streamLength = [0]
-    histogram = dict()
-    true_counts = defaultdict(int)
-    cms = CountMinSketch(D, W)
+    histogram = set()
+    tc = defaultdict(int)
+    cm = CountMinSketch(D, W)
     cs = CountSketch(D, W)
 
-    print(f'Port = {portExp} T = {THRESHOLD} D = {D} W = {W} K = {K}')
+    # Setup socket stream
+    stream = ssc.socketTextStream(HOSTNAME, portExp, StorageLevel.MEMORY_AND_DISK)
+    stream.foreachRDD(lambda time, rdd: process_batch(time, rdd, T, streamLength, histogram, tc, cm, cs, stopping_condition))
 
-    stream = ssc.socketTextStream("algo.dei.unipd.it", portExp, StorageLevel.MEMORY_AND_DISK)
-    stream.foreachRDD(lambda time, rdd: process_batch(time, rdd))
-
+    # Read the socket stream until target number of items is reached
     ssc.start()
     stopping_condition.wait()
     ssc.stop(False, False)
 
-    print(f"Number of processed items = {streamLength[0]}")
-    print(f"Number of distinct items  = {len(true_counts)}")
+    # Identify heavy hitters
+    sorted_tc = sorted(tc.items(), key=lambda x: -x[1])
+    phi_K = sorted_tc[K - 1][1] if len(sorted_tc) >= K else sorted_tc[-1][1]
+    heavy_hitters = [item for item, count in tc.items() if count >= phi_K]
 
-    # Identify top-K heavy hitters
-    sorted_items = sorted(true_counts.items(), key=lambda x: -x[1])
-    if len(sorted_items) == 0:
-        sys.exit(0)
-
-    phiK = sorted_items[K - 1][1] if len(sorted_items) >= K else sorted_items[-1][1]
-    heavy_hitters = [item for item, count in sorted_items if count >= phiK]
-
-    print(f'Number of Top-K Heavy Hitters = {len(heavy_hitters)}')
-
+    # Compute relative errors
     cm_errors = []
     cs_errors = []
-
     for item in heavy_hitters:
-        true_freq = true_counts[item]
-        cm_est = cms.estimate(item)
+        tc_item = tc[item]
+        cm_est = cm.estimate(item)
         cs_est = cs.estimate(item)
-        cm_errors.append(abs(cm_est - true_freq) / true_freq)
-        cs_errors.append(abs(cs_est - true_freq) / true_freq)
+        cm_errors += [abs(tc_item - cm_est) / tc_item]
+        cs_errors += [abs(tc_item - cs_est) / tc_item]
 
+    # Print results
+    print(f"Number of processed items = {streamLength[0]}")
+    print(f"Number of distinct items  = {len(histogram)}")
+    print(f'Number of Top-K Heavy Hitters = {len(heavy_hitters)}')
     print(f'Avg Relative Error for Top-K Heavy Hitters with CM = {sum(cm_errors)/len(cm_errors)}')
     print(f'Avg Relative Error for Top-K Heavy Hitters with CS = {sum(cs_errors)/len(cs_errors)}')
-
     if K <= 10:
         print('Top-K Heavy Hitters:')
-        for item in heavy_hitters:
-            print(f'Item {item} True Frequency = {true_counts[item]} Estimated Frequency with CM = {cms.estimate(item)}')
+        for item in sorted(heavy_hitters):
+            print(f'Item {item} True Frequency = {tc[item]} Estimated Frequency with CM = {cm.estimate(item)}')
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('portExp', type=int, help='Port number')
+    parser.add_argument('T', type=int, help='Target number of items to process')
+    parser.add_argument('D', type=int, help='Number of rows of each sketch')
+    parser.add_argument('W', type=int, help='Number of columns of each sketch')
+    parser.add_argument('K', type=int, help='Number of top frequent items of interest')
+
+    args = parser.parse_args()
+    main(args.portExp, args.T, args.D, args.W, args.K)
