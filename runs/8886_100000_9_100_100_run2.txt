@@ -1,0 +1,9 @@
+Port = 8886 T = 100000 D = 9 W = 100 K = 100
+Number of processed items = 144101
+Number of distinct items  = 28943
+Number of Top-K Heavy Hitters = 28943
+Avg Relative Error for Top-K Heavy Hitters with CM = 280.61395601713485
+Avg Relative Error for Top-K Heavy Hitters with CS = 23.33096108864889
+SUCCESS: The process with PID 936 (child process of PID 34048) has been terminated.
+SUCCESS: The process with PID 34048 (child process of PID 23176) has been terminated.
+SUCCESS: The process with PID 23176 (child process of PID 39232) has been terminated.

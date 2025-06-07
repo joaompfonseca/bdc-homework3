@@ -1,0 +1,9 @@
+Port = 8886 T = 100000 D = 9 W = 100 K = 50
+Number of processed items = 133620
+Number of distinct items  = 26885
+Number of Top-K Heavy Hitters = 26885
+Avg Relative Error for Top-K Heavy Hitters with CM = 260.4843679269776
+Avg Relative Error for Top-K Heavy Hitters with CS = 23.41337196417681
+SUCCESS: The process with PID 38224 (child process of PID 37812) has been terminated.
+SUCCESS: The process with PID 37812 (child process of PID 29560) has been terminated.
+SUCCESS: The process with PID 29560 (child process of PID 34668) has been terminated.

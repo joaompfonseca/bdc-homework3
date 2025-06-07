@@ -1,0 +1,20 @@
+Port = 8886 T = 100000 D = 9 W = 10 K = 10
+Number of processed items = 191346
+Number of distinct items  = 38407
+Number of Top-K Heavy Hitters = 10
+Avg Relative Error for Top-K Heavy Hitters with CM = 0.24775615440681142
+Avg Relative Error for Top-K Heavy Hitters with CS = 0.004711752790746717
+Top-K Heavy Hitters:
+Item 195773912 True Frequency = 15416 Estimated Frequency with CM = 19242
+Item 339323283 True Frequency = 15450 Estimated Frequency with CM = 19149
+Item 434415286 True Frequency = 15306 Estimated Frequency with CM = 19079
+Item 641486445 True Frequency = 15135 Estimated Frequency with CM = 18996
+Item 819911327 True Frequency = 15184 Estimated Frequency with CM = 18939
+Item 870070186 True Frequency = 15414 Estimated Frequency with CM = 19196
+Item 1472610405 True Frequency = 15336 Estimated Frequency with CM = 19093
+Item 1590293530 True Frequency = 15018 Estimated Frequency with CM = 18908
+Item 1690049656 True Frequency = 15499 Estimated Frequency with CM = 19296
+Item 1936875793 True Frequency = 15176 Estimated Frequency with CM = 18920
+SUCCESS: The process with PID 16256 (child process of PID 25416) has been terminated.
+SUCCESS: The process with PID 25416 (child process of PID 32408) has been terminated.
+SUCCESS: The process with PID 32408 (child process of PID 12728) has been terminated.
