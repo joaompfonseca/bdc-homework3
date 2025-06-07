@@ -1,9 +1,7 @@
 import argparse
 import random as r
-import sys
 import threading
-import time
-from collections import Counter, defaultdict
+from collections import defaultdict
 
 from pyspark import SparkConf, SparkContext, StorageLevel
 from pyspark.streaming import StreamingContext
@@ -27,7 +25,6 @@ class CountMinSketch:
     def __init__(self, D, W):
         self.D = D
         self.W = W
-        self.p = 8191
         self.table = [[0] * W for _ in range(D)]
         self.hashes = [generate_hash_function(W) for _ in range(D)]
 
@@ -44,7 +41,6 @@ class CountSketch:
     def __init__(self, D, W):
         self.D = D
         self.W = W
-        self.p = 8191
         self.table = [[0] * W for _ in range(D)]
         self.hashes = [generate_hash_function(W) for _ in range(D)]
         self.signs = [generate_sign_function() for _ in range(D)]
@@ -63,7 +59,7 @@ class CountSketch:
 
 
 def process_batch(time, batch, T, streamLength, histogram, tc, cm, cs, stopping_condition):
-  
+
     # Skip if we processed enough items from stream
     if streamLength[0] >= T:
         return
@@ -109,7 +105,9 @@ def main(portExp: int, T: int, D: int, W: int, K: int):
 
     # Setup socket stream
     stream = ssc.socketTextStream(HOSTNAME, portExp, StorageLevel.MEMORY_AND_DISK)
-    stream.foreachRDD(lambda time, rdd: process_batch(time, rdd, T, streamLength, histogram, tc, cm, cs, stopping_condition))
+    stream.foreachRDD(
+        lambda time, rdd: process_batch(time, rdd, T, streamLength, histogram, tc, cm, cs, stopping_condition)
+    )
 
     # Read the socket stream until target number of items is reached
     ssc.start()
