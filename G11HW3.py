@@ -34,9 +34,8 @@ class CountMinSketch:
             self.C[j][hj_x] += 1
 
     def estimate(self, u: int):
-        est = 0
         C_u = [self.C[j][self.h[j](u)] for j in range(self.D)]
-        return min(C_u, est)
+        return min(C_u)
 
 
 class CountSketch:
